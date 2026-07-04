@@ -1,0 +1,39 @@
+name: Weekly Corners Scrape
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'   # 06:00 UTC every Monday
+  workflow_dispatch:        # Manual trigger from GitHub UI
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Scrape FBRef corners
+        env:
+          API_SPORTS_KEY:      ${{ secrets.API_SPORTS_KEY }}
+          TELEGRAM_BOT_TOKEN:  ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:    ${{ secrets.TELEGRAM_CHAT_ID }}
+          DB_PATH:             predictions.db
+        run: python main.py scrape
+
+      - name: Commit updated DB
+        run: |
+          git config user.name  "sports-engine-bot"
+          git config user.email "bot@sports-engine"
+          git add predictions.db
+          git diff --staged --quiet || git commit -m "Corners scrape: $(date -u '+%Y-%m-%d') UTC"
+          git push
+          
