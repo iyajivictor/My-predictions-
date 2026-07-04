@@ -2,8 +2,11 @@ name: Daily Predictions
 
 on:
   schedule:
-    - cron: '0 7 * * *'   # 07:00 UTC = 08:00 WAT daily
-  workflow_dispatch:        # Manual trigger from GitHub UI
+    - cron: '0 7 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   predict:
@@ -29,7 +32,7 @@ jobs:
           DB_PATH:             predictions.db
         run: python main.py daily
 
-      - name: Commit updated DB back to repo
+      - name: Commit updated DB
         run: |
           git config user.name  "sports-engine-bot"
           git config user.email "bot@sports-engine"
