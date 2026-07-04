@@ -1,0 +1,39 @@
+name: Daily Predictions
+
+on:
+  schedule:
+    - cron: '0 7 * * *'   # 07:00 UTC = 08:00 WAT daily
+  workflow_dispatch:        # Manual trigger from GitHub UI
+
+jobs:
+  predict:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run daily job
+        env:
+          API_SPORTS_KEY:      ${{ secrets.API_SPORTS_KEY }}
+          TELEGRAM_BOT_TOKEN:  ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:    ${{ secrets.TELEGRAM_CHAT_ID }}
+          DB_PATH:             predictions.db
+        run: python main.py daily
+
+      - name: Commit updated DB back to repo
+        run: |
+          git config user.name  "sports-engine-bot"
+          git config user.email "bot@sports-engine"
+          git add predictions.db
+          git diff --staged --quiet || git commit -m "DB update: $(date -u '+%Y-%m-%d %H:%M') UTC"
+          git push
+          
